@@ -30,9 +30,10 @@ rel = track_reliability("my-agent", passed=ev["score"] >= 0.7)
 print(ev["score"], ev["summary"], rel)
 ```
 
-- `judge()` auto-selects **Anthropic** (`ANTHROPIC_API_KEY`) or an **OpenAI-compatible** endpoint (`EVAL_JUDGE_URL`/`EVAL_JUDGE_KEY`). Returns `{score 0..1, summary}`.
+- `judge()` auto-selects **Anthropic** (`ANTHROPIC_API_KEY`) or any **OpenAI-compatible** endpoint (`EVAL_JUDGE_URL`/`EVAL_JUDGE_KEY`). Returns `{score 0..1, summary}`.
+- **Local cross-family judge with [Ollama](https://ollama.com) (free, offline).** Ollama speaks the OpenAI chat API, so a local open model is a zero-cost *different family* from a Claude/GPT/Gemini generator — the cheap fix for self-preference bias. `ollama pull qwen2.5:7b`, then point `EVAL_JUDGE_URL` at `http://localhost:11434/v1/chat/completions`. See [`.env.example`](.env.example) for the full config.
 - `track_reliability()` records pass/fail and returns the recent pass-rate — a `pass^k`-style consistency proxy (capability ≠ reliability).
-- No heavy deps: standard library + `PyYAML`-free. Bring your own model key.
+- No heavy deps: standard library + `PyYAML`-free. Bring your own model key (or run a local one).
 
 ## Core principles (baked into every note)
 

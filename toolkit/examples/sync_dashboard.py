@@ -16,8 +16,16 @@ location, and run THIS where the network is reachable to do the parts that need 
 Configure (env):
     REPORT_URL, REPORT_SECRET                 # where to POST (optional)
     EVAL_JUDGE_PROVIDER=openai                 # force cross-family if the generator was Anthropic
-    EVAL_JUDGE_URL, EVAL_JUDGE_KEY, EVAL_JUDGE_MODEL   # e.g. Gemini's OpenAI-compatible endpoint
+    EVAL_JUDGE_URL, EVAL_JUDGE_KEY, EVAL_JUDGE_MODEL   # judge endpoint (see below)
     EVAL_DATA_DIR                              # folder holding predictions.jsonl, recaps/, latest-report.json
+
+Easiest cross-family judge = a LOCAL Ollama model (free, offline, different family
+than a hosted Claude/GPT/Gemini generator). `ollama pull qwen2.5:7b`, then:
+    EVAL_JUDGE_PROVIDER=openai
+    EVAL_JUDGE_URL=http://localhost:11434/v1/chat/completions
+    EVAL_JUDGE_KEY=ollama          # ignored by Ollama; client just needs it non-empty
+    EVAL_JUDGE_MODEL=qwen2.5:7b
+See .env.example for hosted alternatives (Gemini/OpenAI/Anthropic).
 Requires: pip install yfinance ; ceo_report.py on the path.
 """
 import json
