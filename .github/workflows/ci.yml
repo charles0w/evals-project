@@ -1,0 +1,32 @@
+name: CI
+
+# A CI gate that practices what the knowledge base preaches
+# (knowledge-base/two-tool-stack.md: "a CI gate + a platform").
+# Dependency-free: the toolkit is standard-library only, so is its test suite.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run toolkit tests (stdlib unittest, offline)
+        run: python -m unittest discover -s toolkit/tests -v
+
+      - name: Byte-compile toolkit + examples (syntax gate)
+        run: python -m compileall -q toolkit
