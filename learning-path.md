@@ -36,15 +36,16 @@ A sequenced run through 01-sources that ends with a real eval harness on **ai-tr
 - Do: run (or read closely) the τ-bench retail tasks; see pass^k collapse first-hand.
 - **Capture:** promote trajectory-eval, pass-k-reliability, agent-as-a-judge. Add entry on **T-Eval / AgentBoard Progress Rate** if you want the trajectory-metric detail.
 
-## Week 4 — PROOF: eval harness on ai-trading-bot
+## Week 4 — PROOF: eval harness on ai-trading-bot ✅ built
 
-The depth → **proof** step. This is where the edge becomes real.
+The depth → **proof** step. This is where the edge becomes real. **Implemented in [`harness/`](harness/)** — run `python harness/proof_harness.py validate` (or `--mock` for an offline demo).
 
-- Define the success metric for one bot behavior (e.g. "signal rationale is sound and correctly cites the data").
-- Build a golden set from past signals (label ~30–50 by hand — this is the reusable asset).
-- Implement an LLM judge for rationale quality; **validate it** against your labels (who-validates-the-validators in practice).
-- Report **pass^k**, not just average — is the pipeline *consistent* on identical inputs?
-- **Capture:** a `project` note in `repos/ai-trading-bot/notes.md` linking back here; KB entries for any gotcha you hit.
+- ✅ Define the success metric for one bot behavior — "signal rationale is sound and correctly cites the data" (rubric in `harness/proof_harness.py`, adapted from `criteria/finance-eod-recap.md`).
+- ✅ Build a golden set from past signals — `harness/golden_signals.jsonl`, 30 hand-labeled cases *with ground-truth market data*. **Swap in real signals to make it live.**
+- ✅ Implement an LLM judge for rationale quality; **validate it** against the labels (agreement, Cohen's κ, false-pass count — `who-validates-the-validators` in practice).
+- ✅ Report **pass^k**, not just average — `passk` subcommand, with Wilson confidence intervals.
+- ✅ **Capture:** project note in [`harness/notes.md`](harness/notes.md); gotchas logged there (faithfulness-needs-ground-truth, κ-over-raw-agreement, pass^k-needs-nondeterminism).
+- **Remaining:** run `validate` against a real cross-family judge and record the κ; promote the related KB entries to `mastered`.
 
 ## Week 5 — Rigor + distribution
 
