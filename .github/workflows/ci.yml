@@ -25,8 +25,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run toolkit tests (stdlib unittest, offline)
+      - name: Run tests (stdlib unittest, offline)
         run: python -m unittest discover -s toolkit/tests -v
 
-      - name: Byte-compile toolkit + examples (syntax gate)
-        run: python -m compileall -q toolkit
+      - name: Byte-compile toolkit + harness (syntax gate)
+        run: python -m compileall -q toolkit harness
+
+      - name: PROOF harness smoke (mock judge, no keys)
+        run: |
+          python harness/proof_harness.py validate --mock
+          python harness/proof_harness.py passk --mock --k 5

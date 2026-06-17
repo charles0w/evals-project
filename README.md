@@ -16,6 +16,7 @@ Evals are the durable, under-practiced skill in AI engineering. Models change; t
 |---|---|
 | [`knowledge-base/`](knowledge-base/) | Atomic concept notes — one idea per file (LLM-as-judge, trajectory eval, pass^k reliability, judge biases, benchmark contamination, the canonical papers/benchmarks, and more). Start at [`knowledge-base/README.md`](knowledge-base/README.md). |
 | [`toolkit/`](toolkit/) | Reusable code. `ceo_report.py` — a provider-aware **LLM-as-judge** (Anthropic or any OpenAI-compatible endpoint), a **pass^k-style reliability tracker**, and a status reporter. Plus runnable [`examples/`](toolkit/examples/). |
+| [`harness/`](harness/) | The **Week-4 PROOF harness** — a runnable end-to-end eval on one real behavior (ai-trading-bot signal rationales): a hand-labeled golden set, a validated LLM judge, and pass^k reliability with confidence intervals. Start at [`harness/README.md`](harness/README.md). |
 | [`criteria/`](criteria/) | Per-task judging **rubrics** — versioned definitions of "good," kept out of code so they have one home. |
 | [`sources.md`](sources.md) | A curated, deliberately short source list — the few people, papers, tools, and benchmarks actually worth following. |
 | [`learning-path.md`](learning-path.md) | A 6-week deep dive that ends in a real eval harness on a real system. |
