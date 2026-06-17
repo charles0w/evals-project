@@ -35,6 +35,16 @@ print(ev["score"], ev["summary"], rel)
 - `track_reliability()` records pass/fail and returns the recent pass-rate — a `pass^k`-style consistency proxy (capability ≠ reliability).
 - No heavy deps: standard library + `PyYAML`-free. Bring your own model key (or run a local one).
 
+## Tests / CI gate
+
+The toolkit ships with an offline test suite (standard-library `unittest`, no network, no keys) — eating our own dog food on [`two-tool-stack.md`](knowledge-base/two-tool-stack.md)'s "a CI gate + a platform." Run it locally:
+
+```bash
+python -m unittest discover -s toolkit/tests -v
+```
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the same suite on every push/PR across Python 3.9–3.12, plus a byte-compile syntax gate over `toolkit/`.
+
 ## Core principles (baked into every note)
 
 1. **Capability ≠ reliability.** A model that's right 80% of the time but inconsistent on identical inputs is untradeable. Measure both.
