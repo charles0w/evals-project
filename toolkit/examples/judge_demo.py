@@ -52,9 +52,10 @@ def main():
         return
     if do_report:
         rel = track_reliability("finance", passed=ev["score"] >= 0.7)
+        print(f"reliability: {rel['rate']:.0%} [{rel['ci_low']:.0%}–{rel['ci_high']:.0%}] n={rel['n']}")
         ok = report(
             "finance", ok=True, summary="judge demo — real Anthropic score",
-            eval_score=ev["score"], eval_reliability=rel, eval_summary=ev["summary"],
+            eval_score=ev["score"], eval_reliability=rel["rate"], eval_summary=ev["summary"],
         )
         print(f"reported to dashboard: {'OK' if ok else 'FAILED (set REPORT_SECRET?)'}")
 

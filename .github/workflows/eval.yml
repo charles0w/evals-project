@@ -1,0 +1,25 @@
+name: eval-ci
+
+# Live judge liveness gate — complements ci.yml's offline suite.
+# Skips the live call gracefully when ANTHROPIC_API_KEY secret is absent
+# (fork PRs), so the workflow always turns green.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  live-judge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Live judge liveness test
+        run: PYTHONPATH=toolkit python -m unittest discover -s tests -v
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -33,7 +33,7 @@ import os
 import datetime
 from pathlib import Path
 
-from ceo_report import judge, report
+from ceo_report import judge, report, wilson_ci
 
 DATA = Path(os.environ.get("EVAL_DATA_DIR", "."))
 LEDGER = DATA / "predictions.jsonl"
@@ -100,7 +100,12 @@ def grade(rows):
 
 def reliability(rows, k=WINDOW):
     g = [r for r in rows if r.get("status") == "graded"][-k:]
-    return round(sum(1 for r in g if r.get("correct")) / len(g), 4) if len(g) >= 3 else None
+    if len(g) < 3:
+        return None
+    hits = sum(1 for r in g if r.get("correct"))
+    n = len(g)
+    lo, hi = wilson_ci(hits, n)
+    return {"rate": round(hits / n, 4), "ci_low": round(lo, 4), "ci_high": round(hi, 4), "n": n}
 
 
 def latest_text():
@@ -126,9 +131,12 @@ def main():
     else:
         score, note = latest.get("evalScore"), "[self-judged fallback] " + latest.get("evalSummary", "")
 
+    rel_rate = rel["rate"] if rel else None
     ok = report(AGENT_ID, ok=True, summary=latest.get("summary", "recap"),
-                eval_score=score, eval_reliability=rel, eval_summary=note)
-    print(f"reliability={rel} score={score} posted={'OK' if ok else 'FAILED'}")
+                eval_score=score, eval_reliability=rel_rate, eval_summary=note)
+    if rel:
+        print(f"reliability: {rel['rate']:.0%} [{rel['ci_low']:.0%}–{rel['ci_high']:.0%}] n={rel['n']}")
+    print(f"score={score} posted={'OK' if ok else 'FAILED'}")
 
 
 if __name__ == "__main__":

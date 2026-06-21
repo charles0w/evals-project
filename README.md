@@ -1,5 +1,7 @@
 # evals-project
 
+[![eval-ci](https://github.com/your-org/evals-project/actions/workflows/eval.yml/badge.svg)](https://github.com/your-org/evals-project/actions/workflows/eval.yml)
+
 A practical, opinionated knowledge base and toolkit for **evaluating LLMs and AI agents** — built depth-first, around one question that matters more than any benchmark leaderboard:
 
 > *Is this output good enough to trust with a customer, or with capital?*
@@ -24,17 +26,20 @@ Evals are the durable, under-practiced skill in AI engineering. Models change; t
 ## The toolkit in 30 seconds
 
 ```python
-from ceo_report import judge, track_reliability
+from ceo_report import judge, track_reliability, wilson_ci
 
 ev  = judge(output, criteria="Faithful to source data; complete; no hallucinated numbers")
+# judge(both=True) calls both Anthropic + OpenAI-compat and returns agreement/delta
 rel = track_reliability("my-agent", passed=ev["score"] >= 0.7)
-print(ev["score"], ev["summary"], rel)
+lo, hi = rel["ci_low"], rel["ci_high"]
+print(f"score={ev['score']}  reliability={rel['rate']:.0%} [{lo:.0%}, {hi:.0%}] n={rel['n']}")
 ```
 
-- `judge()` auto-selects **Anthropic** (`ANTHROPIC_API_KEY`) or any **OpenAI-compatible** endpoint (`EVAL_JUDGE_URL`/`EVAL_JUDGE_KEY`). Returns `{score 0..1, summary}`.
-- **Local cross-family judge with [Ollama](https://ollama.com) (free, offline).** Ollama speaks the OpenAI chat API, so a local open model is a zero-cost *different family* from a Claude/GPT/Gemini generator — the cheap fix for self-preference bias. `ollama pull qwen2.5:7b`, then point `EVAL_JUDGE_URL` at `http://localhost:11434/v1/chat/completions`. See [`.env.example`](.env.example) for the full config.
-- `track_reliability()` records pass/fail and returns the recent pass-rate — a `pass^k`-style consistency proxy (capability ≠ reliability).
-- No heavy deps: standard library + `PyYAML`-free. Bring your own model key (or run a local one).
+- `judge()` auto-selects **Anthropic** (`ANTHROPIC_API_KEY`) or any **OpenAI-compatible** endpoint (`EVAL_JUDGE_URL`/`EVAL_JUDGE_KEY`). Returns `{score 0..1, summary}`. Pass `both=True` to call both providers and get `agreement`/`delta` for cross-family validation.
+- **Local cross-family judge with [Ollama](https://ollama.com) (free, offline).** Ollama speaks the OpenAI chat API, so a local open model is a zero-cost *different family* from a Claude/GPT/Gemini generator — the cheapest fix for self-preference bias. `ollama pull qwen2.5:7b`, then set `EVAL_JUDGE_URL=http://localhost:11434/v1/chat/completions`. See [`.env.example`](.env.example) for the full config.
+- `track_reliability()` records pass/fail and returns `{rate, ci_low, ci_high, n}` — a rolling pass-rate with a 95% Wilson CI. Pass `rel["rate"]` to `report()`.
+- `wilson_ci(k, n)` is also available standalone for any proportion (e.g. backtest hit rates).
+- No heavy deps: standard library only. Bring your own model key.
 
 ## Tests / CI gate
 
@@ -44,7 +49,7 @@ The toolkit ships with an offline test suite (standard-library `unittest`, no ne
 python -m unittest discover -s toolkit/tests -v
 ```
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the same suite on every push/PR across Python 3.9–3.12, plus a byte-compile syntax gate over `toolkit/`.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the same suite on every push/PR across Python 3.9–3.12, plus a byte-compile syntax gate over `toolkit/`. [`.github/workflows/eval.yml`](.github/workflows/eval.yml) adds a live liveness check when `ANTHROPIC_API_KEY` is set as a secret.
 
 ## Core principles (baked into every note)
 

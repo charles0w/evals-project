@@ -127,6 +127,16 @@ def base_rate(close, horizon=HORIZON):
 def _p_two_sided(z):
     return math.erfc(abs(z) / math.sqrt(2))    # normal-approx two-sided p-value
 
+def _wilson_ci(k, n, z=1.96):
+    if n == 0:
+        return 0.0, 1.0
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = (z / d) * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return max(0.0, c - h), min(1.0, c + h)
+
+
 def summarize(records, baseline_p, label):
     n = len(records)
     if n == 0:
@@ -134,6 +144,7 @@ def summarize(records, baseline_p, label):
         return
     hits = sum(r["correct"] for r in records)
     hit = hits / n
+    lo, hi = _wilson_ci(hits, n)
     avg_real = statistics.mean(r["realized"] for r in records)
     cum = sum(r["realized"] for r in records)            # equal-size, sequential
     # significance of hit-rate vs the base rate (binomial normal approx)
@@ -141,7 +152,7 @@ def summarize(records, baseline_p, label):
     z = (hit - baseline_p) / se if se and not math.isnan(se) else float("nan")
     p = _p_two_sided(z) if not math.isnan(z) else float("nan")
     print(f"\n[{label}]  trades={n}")
-    print(f"  hit rate            {hit:.1%}   (baseline up-rate {baseline_p:.1%})")
+    print(f"  hit rate            {hit:.1%}  [{lo:.1%}, {hi:.1%}]   (baseline {baseline_p:.1%})")
     print(f"  edge vs baseline    {hit - baseline_p:+.1%}   z={z:.2f}  p={p:.3f}"
           + ("  *** significant" if not math.isnan(p) and p < 0.05 else "  (not significant)"))
     print(f"  avg realized/trade  {avg_real:+.2%}  (after {COST_BPS}bps cost)")

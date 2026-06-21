@@ -41,9 +41,9 @@ class ParseJudgeTests(unittest.TestCase):
         self.assertEqual(out["score"], 0.6)
         self.assertEqual(out["summary"], "ok")
 
-    def test_out_of_range_score_is_clamped(self):
-        out = ceo_report._parse_judge('{"score": 1.5, "summary": "over"}')
-        self.assertEqual(out["score"], 1.0)
+    def test_out_of_range_score_raises(self):
+        with self.assertRaises(ValueError):
+            ceo_report._parse_judge('{"score": 1.5, "summary": "over"}')
 
     def test_missing_summary_defaults_empty(self):
         out = ceo_report._parse_judge('{"score": 0.3}')
@@ -71,29 +71,60 @@ class TrackReliabilityTests(unittest.TestCase):
             pass
 
     def test_first_pass_is_full_rate(self):
-        self.assertEqual(ceo_report.track_reliability("a", passed=True), 1.0)
+        rel = ceo_report.track_reliability("a", passed=True)
+        self.assertEqual(rel["rate"], 1.0)
+        self.assertIn("ci_low", rel)
+        self.assertIn("ci_high", rel)
+        self.assertEqual(rel["n"], 1)
 
     def test_rolling_fraction(self):
         ceo_report.track_reliability("a", passed=True)
         ceo_report.track_reliability("a", passed=False)
-        rate = ceo_report.track_reliability("a", passed=True)
-        self.assertAlmostEqual(rate, 2 / 3)
+        rel = ceo_report.track_reliability("a", passed=True)
+        self.assertAlmostEqual(rel["rate"], 2 / 3)
 
     def test_window_truncates_old_runs(self):
         # 8 fails then 1 pass, window=8 -> oldest fail drops out, 1/8 pass.
         for _ in range(8):
             ceo_report.track_reliability("a", passed=False)
-        rate = ceo_report.track_reliability("a", passed=True)
-        self.assertAlmostEqual(rate, 1 / 8)
+        rel = ceo_report.track_reliability("a", passed=True)
+        self.assertAlmostEqual(rel["rate"], 1 / 8)
 
     def test_agents_are_isolated(self):
         ceo_report.track_reliability("a", passed=True)
-        self.assertEqual(ceo_report.track_reliability("b", passed=False), 0.0)
+        self.assertEqual(ceo_report.track_reliability("b", passed=False)["rate"], 0.0)
 
     def test_persists_to_disk(self):
         ceo_report.track_reliability("a", passed=True)
         on_disk = json.loads(Path(self._tmp.name).read_text())
         self.assertEqual(on_disk["a"], [True])
+
+
+class WilsonCITests(unittest.TestCase):
+    def test_zero_n_returns_full_range(self):
+        self.assertEqual(ceo_report.wilson_ci(0, 0), (0.0, 1.0))
+
+    def test_all_pass_hi_is_one(self):
+        lo, hi = ceo_report.wilson_ci(10, 10)
+        self.assertGreater(lo, 0.0)
+        self.assertEqual(hi, 1.0)
+
+    def test_all_fail_lo_is_zero(self):
+        lo, hi = ceo_report.wilson_ci(0, 10)
+        self.assertEqual(lo, 0.0)
+        self.assertLess(hi, 1.0)
+
+    def test_midpoint_straddles_half(self):
+        lo, hi = ceo_report.wilson_ci(5, 10)
+        self.assertLess(lo, 0.5)
+        self.assertGreater(hi, 0.5)
+
+    def test_bounds_always_in_01(self):
+        for k, n in [(0, 1), (1, 1), (3, 5), (10, 100)]:
+            lo, hi = ceo_report.wilson_ci(k, n)
+            self.assertGreaterEqual(lo, 0.0)
+            self.assertLessEqual(hi, 1.0)
+            self.assertLessEqual(lo, hi)
 
 
 class JudgeUnconfiguredTests(unittest.TestCase):
